@@ -9,3 +9,5 @@ build/
 *.egg-info/
 models/
 airgap-transfer-kit/
+agentic-cyber/
+work/
