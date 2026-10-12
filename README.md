@@ -235,3 +235,4 @@ security-workflow-worker outbox
 The intake worker consumes `security.finding.received.v1`, creates the PostgreSQL workflow record, executes the graph, and commits the Kafka offset only after successful processing. The outbox worker publishes committed `review.required` or `poam.generated` records to Kafka and only marks them published after a broker acknowledgement. Use `--once` with either command for one local polling cycle.
 
 With both workers running, `POST /submit-finding` publishes a validated `finding.received` event to Kafka. `POST /validate-workflow` remains the direct, synchronous development route.
+# Agentic_cyber
