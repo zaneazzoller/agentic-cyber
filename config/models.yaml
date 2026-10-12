@@ -1,0 +1,15 @@
+models:
+  security-reasoning:
+    provider: vllm
+    name: meta-llama/Llama-3.2-1B-Instruct
+    base_url_env: VLLM_BASE_URL
+    api_key_env: VLLM_API_KEY
+    temperature: 0.1
+    timeout_seconds: 90
+  security-fast:
+    provider: vllm
+    name: meta-llama/Llama-3.2-1B-Instruct
+    base_url_env: VLLM_BASE_URL
+    api_key_env: VLLM_API_KEY
+    temperature: 0.0
+    timeout_seconds: 45

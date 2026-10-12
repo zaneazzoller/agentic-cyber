@@ -1,0 +1,87 @@
+tools:
+  nist_candidate_control_mapping:
+    adapter: deterministic_nist_candidate_mapper
+    timeout_seconds: 30
+    result_limit: 10
+    classification: internal
+    mapping_backend: transformer
+    embedding_model: models/nist/all-mpnet-base-v2
+    reranker_model: models/nist/ms-marco-MiniLM-L6-v2
+    embedding_cache_dir: data/nist_embedding_cache
+    embedding_batch_size: 8
+  cve_lookup:
+    adapter: official_nvd_snapshot
+    timeout_seconds: 15
+    result_limit: 1
+    classification: public
+  nist_control_catalog:
+    adapter: official_nist_oscal_snapshot
+    query_template: nist_controls_by_keyword_and_revision
+    timeout_seconds: 10
+    result_limit: 25
+    classification: internal
+  cve_control_mapping_lookup:
+    adapter: approved_control_mapping_repository
+    query_template: reviewed_cve_control_mappings
+    timeout_seconds: 10
+    result_limit: 25
+    classification: internal
+  cisa_kev_lookup:
+    adapter: official_cisa_kev_snapshot
+    timeout_seconds: 15
+    result_limit: 1
+    classification: public
+  cisa_mandate_lookup:
+    adapter: official_cisa_policy_input
+    query_template: cisa_mandate_by_cve
+    timeout_seconds: 10
+    result_limit: 10
+    classification: internal
+  asset_inventory_lookup:
+    adapter: synthetic_asset_inventory
+    timeout_seconds: 15
+    result_limit: 100
+    classification: internal
+  cmdb_lookup:
+    adapter: synthetic_cmdb
+    timeout_seconds: 15
+    result_limit: 100
+    classification: internal
+  network_topology_lookup:
+    adapter: synthetic_network_topology
+    timeout_seconds: 20
+    result_limit: 100
+    classification: confidential
+  vulnerability_scan_lookup:
+    adapter: synthetic_vulnerability
+    timeout_seconds: 15
+    result_limit: 25
+    classification: internal
+  network_reachability_crawl:
+    adapter: synthetic_reachability
+    timeout_seconds: 20
+    result_limit: 100
+    max_hops: 4
+    classification: confidential
+  manifest_artifact_lookup:
+    adapter: synthetic_manifest
+    timeout_seconds: 15
+    result_limit: 10
+    classification: internal
+  historical_mitigation_search:
+    adapter: synthetic_mitigation_retrieval
+    timeout_seconds: 15
+    result_limit: 5
+    classification: internal
+  splunk_asset_context:
+    adapter: synthetic_splunk_asset
+    query_template: security_asset_context
+    timeout_seconds: 30
+    result_limit: 100
+    classification: confidential
+  splunk_network_artifacts:
+    adapter: synthetic_splunk_network
+    query_template: security_network_artifacts_by_asset
+    timeout_seconds: 30
+    result_limit: 250
+    classification: confidential

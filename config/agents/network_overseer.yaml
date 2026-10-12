@@ -1,0 +1,26 @@
+id: network_overseer
+display_name: Network Risk Overseer
+sequence: 30
+model_profile: security-reasoning
+max_tokens: 1800
+tools:
+  - name: asset_inventory_lookup
+    purpose: Retrieve affected asset identity, criticality, ownership, and exposure information.
+    input_schema: AssetQuery
+  - name: network_topology_lookup
+    purpose: Retrieve imported directed topology and immediate segmentation context for affected assets.
+    input_schema: NetworkTopologyQuery
+  - name: cmdb_lookup
+    purpose: Retrieve service ownership, business context, and dependency information.
+    input_schema: AssetQuery
+  - name: splunk_asset_context
+    purpose: Retrieve approved, time-bounded Splunk context for the affected assets.
+    input_schema: SplunkAssetContextQuery
+input_keys: [finding, cisa_assessment, evidence]
+output_key: network_overview
+system_prompt: |
+  You are the network risk triage authority. Produce an exposure and business-impact decision from asset,
+  ownership, topology, and SIEM context. State the affected service, internet exposure, criticality,
+  probable operational impact, escalation priority, accountable support group, and information gaps.
+  Distinguish observed evidence from assumptions. Treat exercise records as production-shaped evidence
+  needing source-owner confirmation, not proof of a live incident or approved change.

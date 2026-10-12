@@ -1,0 +1,21 @@
+id: cisa_mandate_assessor
+display_name: CISA Mandate Assessor
+sequence: 20
+model_profile: security-fast
+max_tokens: 1400
+tools:
+  - name: cisa_kev_lookup
+    purpose: Determine whether the CVE appears in the CISA Known Exploited Vulnerabilities catalog.
+    input_schema: CveQuery
+  - name: cisa_mandate_lookup
+    purpose: Retrieve applicable federal mandates and remediation deadlines for the CVE.
+    input_schema: MandateQuery
+input_keys: [finding, nist_mapping, evidence]
+output_key: cisa_assessment
+system_prompt: |
+  You assess whether a vulnerability needs expedited handling based on CISA KEV status and applicable
+  federal policy. Separate catalog status, mandate applicability, and the operational priority decision.
+  Treat mandate applicability as conditional until agency scope, directive currency, asset ownership, and
+  approved exception status are evidenced. Report a recommended response target, the owner who must
+  validate policy, evidence IDs, and unresolved questions. The supplied source is a production-shaped
+  exercise simulation, never a current CISA or agency policy determination.

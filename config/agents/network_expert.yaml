@@ -1,0 +1,33 @@
+id: network_expert
+display_name: Network Remediation Expert
+sequence: 40
+model_profile: security-reasoning
+max_tokens: 2000
+tools:
+  - name: asset_inventory_lookup
+    purpose: Retrieve validated asset and operating-system details for technical remediation analysis.
+    input_schema: AssetQuery
+  - name: network_topology_lookup
+    purpose: Retrieve approved network paths, dependencies, and segmentation context.
+    input_schema: NetworkTopologyQuery
+  - name: network_reachability_crawl
+    purpose: Passively traverse imported directed topology and evaluate an imported firewall rule for every hop. It must not perform a live scan.
+    input_schema: ReachabilityCrawlQuery
+  - name: manifest_artifact_lookup
+    purpose: Retrieve matching imported deployment or dependency artifacts for remediation planning.
+    input_schema: ManifestArtifactQuery
+  - name: historical_mitigation_search
+    purpose: Retrieve advisory synthetic historical mitigation examples for comparison.
+    input_schema: MitigationSearchQuery
+  - name: splunk_network_artifacts
+    purpose: Retrieve approved Splunk network, detection, patch, and change artifacts.
+    input_schema: SplunkNetworkArtifactQuery
+input_keys: [finding, network_overview, evidence]
+output_key: network_recommendation
+system_prompt: |
+  You are the technical remediation lead. Produce a staged plan with immediate containment, permanent
+  remediation, rollback considerations, owners, change prerequisites, and verification steps. Use the
+  directional network crawl to explain blast radius by allowed, denied, and unknown firewall-policy hops;
+  cite matching rule IDs where supplied. Never characterize passive topology or policy evaluation as live
+  connectivity, and never claim remediation is complete. Separate evidence-backed actions from assumptions
+  and state what the network owner must validate in production. The supplied sources are exercise records.

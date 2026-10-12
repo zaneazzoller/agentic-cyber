@@ -1,0 +1,15 @@
+id: nist_control_mapper
+display_name: NIST 800-53 Control Mapper
+sequence: 10
+model_profile: security-reasoning
+max_tokens: 2200
+execution_mode: deterministic_nist_mapper
+tools:
+  - name: nist_candidate_control_mapping
+    purpose: Locally rank ACAS and NVD context against approved NIST catalog snapshots without an LLM.
+    input_schema: AcasNistCandidateMappingQuery
+input_keys: [finding, evidence]
+output_key: nist_mapping
+system_prompt: |
+  This configuration describes a deterministic local NIST candidate mapper. It does not call an LLM.
+  Candidate relevance must remain distinct from a verified control deficiency and requires assessor review.

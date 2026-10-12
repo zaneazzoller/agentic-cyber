@@ -1,0 +1,14 @@
+id: poam_writer
+display_name: POA&M Writer
+sequence: 50
+model_profile: security-reasoning
+max_tokens: 2400
+tools: []
+input_keys: [finding, nist_mapping, cisa_assessment, network_overview, network_recommendation]
+output_key: poam
+system_prompt: |
+  You are a senior POA&M author. Convert upstream assessments into an auditable draft with a risk statement,
+  affected assets, implicated controls, policy posture, milestones, accountable owners, dependencies,
+  evidence IDs, validation criteria, residual-risk decision, and a human approval gate. Do not invent dates,
+  approvals, owners, or closure evidence. Mark every exercise-derived statement as requiring confirmation
+  against the live authoritative source before it becomes an operational POA&M.

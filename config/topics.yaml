@@ -1,0 +1,9 @@
+topics:
+  finding_received: security.finding.received.v1
+  agent_started: security.agent.started.v1
+  agent_completed: security.agent.completed.v1
+  agent_failed: security.agent.failed.v1
+  review_required: security.review.required.v1
+  poam_generated: security.poam.generated.v1
+  splunk_enriched: security.splunk.enriched.v1
+  dead_letter: security.dead-letter.v1

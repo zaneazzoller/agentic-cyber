@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Security Workflow Console</title>
+    <style>
+      :root { color-scheme: dark; --bg:#0b1020; --panel:#151d32; --border:#2b3859; --muted:#9eabc5; --text:#edf2ff; --accent:#5eead4; --warn:#fbbf24; --bad:#fb7185; }
+      * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font:14px/1.45 Inter, ui-sans-serif, system-ui, sans-serif; }
+      header { padding:22px 28px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; gap:16px; }
+      h1,h2,h3,p { margin:0; } h1 { font-size:20px; } .subtle { color:var(--muted); margin-top:3px; }
+      main { display:grid; grid-template-columns:minmax(310px, .85fr) minmax(480px, 1.6fr); gap:16px; padding:16px; min-height:calc(100vh - 76px); }
+      .panel { background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; } .panel-head { padding:14px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+      button { border:1px solid #43617a; background:#18334a; color:var(--text); border-radius:7px; padding:7px 10px; cursor:pointer; } button:hover { background:#214661; } button.primary { background:#0f766e; border-color:#2dd4bf; }
+      .workflow { width:100%; border:0; border-radius:0; border-bottom:1px solid var(--border); text-align:left; padding:12px 16px; background:transparent; } .workflow.active { background:#1d2b48; border-left:3px solid var(--accent); } .workflow:hover { background:#1a2742; }
+      .row { display:flex; justify-content:space-between; gap:8px; } .muted { color:var(--muted); font-size:12px; } .status { font-size:11px; padding:2px 7px; border-radius:20px; background:#263855; } .status.completed { color:var(--accent); } .status.review_required { color:var(--warn); } .status.failed { color:var(--bad); }
+      #detail { padding:18px; } .empty { color:var(--muted); padding:24px 0; } .summary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:16px 0; } .metric { padding:10px; background:#10182b; border-radius:8px; }
+      .agent { margin-top:12px; border:1px solid var(--border); border-radius:8px; overflow:hidden; } .agent summary { cursor:pointer; padding:11px 12px; list-style:none; display:flex; justify-content:space-between; } .agent summary::-webkit-details-marker { display:none; } pre { margin:0; padding:12px; overflow:auto; background:#0a0f1c; color:#c8d8fa; max-height:390px; font-size:12px; }
+      form { display:grid; gap:8px; grid-template-columns:1fr 1fr; padding:12px 16px; border-bottom:1px solid var(--border); } input { width:100%; padding:8px; background:#0c1324; border:1px solid var(--border); border-radius:6px; color:var(--text); } form button { grid-column:span 2; } #notice { min-height:20px; padding:0 16px 10px; color:var(--muted); }
+      @media(max-width:800px) { main { grid-template-columns:1fr; } }
+    </style>
+  </head>
+  <body>
+    <header><div><h1>Security Workflow Console</h1><p class="subtle">Local workflow state, specialist-agent responses, and persisted evidence</p></div><button id="refresh">Refresh now</button></header>
+    <main>
+      <section class="panel"><div class="panel-head"><h2>Workflows</h2><span id="count" class="muted"></span></div>
+        <form id="submit-form"><input name="finding_id" placeholder="Finding ID" value="synthetic-001" required><input name="cve_id" placeholder="CVE ID" value="CVE-2022-1388"><input name="title" placeholder="Finding title" value="Synthetic exposed F5 management finding" required><input name="severity" placeholder="Severity" value="critical"><input name="asset" placeholder="Affected asset" value="prd-eus-lb-01"><input name="source_system" placeholder="Source system" value="dashboard" required><button class="primary" type="submit">Run workflow</button></form>
+        <div id="notice"></div><div id="workflows"></div>
+      </section>
+      <section class="panel"><div class="panel-head"><h2>Workflow detail</h2><span id="last-updated" class="muted"></span></div><div id="detail"><p class="empty">Select a workflow to inspect its stored finding and agent responses.</p></div></section>
+    </main>
+    <script>
+      const workflows = document.querySelector('#workflows'); const detail = document.querySelector('#detail'); const notice = document.querySelector('#notice'); let activeId = null;
+      const escapeHtml = (text) => String(text ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+      const renderStatus = s => `<span class="status ${escapeHtml(s)}">${escapeHtml(s)}</span>`;
+      const readingResponse = () => Boolean(detail.querySelector('details[open]'));
+      async function loadDetail(id) { const response = await fetch(`/workflows/${id}`); if (!response.ok) throw new Error('Workflow could not be loaded'); const data = await response.json(); activeId = id;
+        detail.innerHTML = `<div class="row"><div><h3>${escapeHtml(data.finding_id)}</h3><p class="subtle">${escapeHtml(data.status)} · ${escapeHtml(data.classification)}</p></div>${renderStatus(data.status)}</div><div class="summary"><div class="metric"><div class="muted">Created</div>${new Date(data.created_at).toLocaleString()}</div><div class="metric"><div class="muted">Agent responses</div>${data.agent_runs.length}</div><div class="metric"><div class="muted">Evidence items</div>${data.evidence.length}</div></div><h3>Finding</h3><pre>${escapeHtml(JSON.stringify(data.finding, null, 2))}</pre><h3 style="margin-top:16px">Agent responses</h3>${data.agent_runs.map(run => `<details class="agent"><summary><span>${escapeHtml(run.agent_id)}</span><span>${renderStatus(run.status)}</span></summary><pre>${escapeHtml(JSON.stringify(run.output, null, 2))}</pre></details>`).join('') || '<p class="empty">Workflow is running; agent responses will appear when they are persisted.</p>'}<h3 style="margin-top:16px">Evidence</h3>${data.evidence.map(item => `<details class="agent"><summary><span>${escapeHtml(item.external_id)}</span><span class="muted">${escapeHtml(item.source)}</span></summary><pre>${escapeHtml(JSON.stringify(item, null, 2))}</pre></details>`).join('') || '<p class="empty">No persisted evidence yet.</p>'}`;
+        document.querySelectorAll('.workflow').forEach(el => el.classList.toggle('active', el.dataset.id === id));
+      }
+      async function loadWorkflows({ refreshDetail = true } = {}) { try { const response = await fetch('/workflows?limit=50'); if (!response.ok) throw new Error('Workflow list unavailable'); const data = await response.json(); document.querySelector('#count').textContent = `${data.length} saved`; workflows.innerHTML = data.map(w => `<button class="workflow ${w.workflow_id === activeId ? 'active' : ''}" data-id="${escapeHtml(w.workflow_id)}"><div class="row"><strong>${escapeHtml(w.finding_id)}</strong>${renderStatus(w.status)}</div><div class="muted">${new Date(w.created_at).toLocaleString()}</div></button>`).join('') || '<p class="empty" style="padding:16px">No workflows yet.</p>'; document.querySelectorAll('.workflow').forEach(el => el.onclick = () => loadDetail(el.dataset.id).catch(showError)); if (refreshDetail && activeId && data.some(w => w.workflow_id === activeId)) await loadDetail(activeId); document.querySelector('#last-updated').textContent = `Updated ${new Date().toLocaleTimeString()}`; } catch (error) { showError(error); } }
+      function showError(error) { notice.textContent = error.message || 'Request failed'; notice.style.color = 'var(--bad)'; }
+      document.querySelector('#refresh').onclick = loadWorkflows;
+      document.querySelector('#submit-form').onsubmit = async event => { event.preventDefault(); const values = Object.fromEntries(new FormData(event.target)); notice.textContent = 'Workflow started…'; notice.style.color = 'var(--muted)'; try { const response = await fetch('/validate-workflow', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...values, affected_assets: values.asset ? [values.asset] : []})}); const data = await response.json(); if (!response.ok) throw new Error(data.detail || 'Workflow failed'); activeId = data.workflow_id; notice.textContent = `Workflow ${activeId} completed.`; notice.style.color = 'var(--accent)'; await loadWorkflows(); } catch (error) { showError(error); await loadWorkflows(); } };
+      loadWorkflows(); setInterval(() => {
+        // Replacing detail.innerHTML collapses <details> and interrupts reading. Automatic polling
+        // waits until every agent response and evidence record has been closed; Refresh now remains
+        // available for an explicit update.
+        if (!readingResponse()) loadWorkflows();
+      }, 5000);
+    </script>
+  </body>
+</html>
