@@ -70,9 +70,13 @@ MODEL_STORE='/absolute/path/to/model-store' \
 ./scripts/create_airgap_bundle.sh /media/transfer/security-workflow-airgap-kit
 ```
 
-The bundle intentionally fails if `VLLM_IMAGE` is omitted. Pinning the image prevents a later `latest`
-tag from silently changing the model server. If the optional NIST models are not available, omit
-`MODEL_STORE`; the application remains usable and the mapper transparently uses lexical/CWE retrieval.
+If Docker Desktop works from Windows but WSL integration is unavailable, invoke the Windows client from
+WSL by prefixing the command with `DOCKER_BIN=docker.exe`.
+
+Pin the vLLM image rather than using `latest`, so a later pull cannot silently change the model server.
+If you do not need vLLM in this transfer kit, omit `VLLM_IMAGE`; the bundle will include only PostgreSQL,
+Kafka, and the Python wheelhouse. If the optional NIST models are not available, omit `MODEL_STORE`; the
+application remains usable and the mapper transparently uses lexical/CWE retrieval.
 
 ### 2. Transfer and install offline
 

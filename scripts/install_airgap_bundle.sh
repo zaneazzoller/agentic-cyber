@@ -10,13 +10,21 @@ fi
 bundle_root=$(realpath -e "$1")
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 python_bin=${PYTHON_BIN:-python3.11}
+docker_bin=${DOCKER_BIN:-docker}
 
-for command in "$python_bin" docker sha256sum; do
-  command -v "$command" >/dev/null || { echo "Missing required command: $command" >&2; exit 69; }
+for command in "$python_bin" "$docker_bin" sha256sum; do
+  command -v "$command" >/dev/null || [[ -x "$command" ]] || {
+    echo "Missing required command: $command" >&2
+    exit 69
+  }
 done
 
 (cd "$bundle_root" && sha256sum --check SHA256SUMS)
-docker load --input "$bundle_root/images/runtime-images.tar"
+image_archive="$bundle_root/images/runtime-images.tar"
+if [[ "$docker_bin" == *.exe && -x "$(command -v wslpath || true)" ]]; then
+  image_archive=$(wslpath -w "$image_archive")
+fi
+"$docker_bin" load --input "$image_archive"
 
 if [[ -f "$bundle_root/models/models.tar" ]]; then
   mkdir -p "$repo_root/models"

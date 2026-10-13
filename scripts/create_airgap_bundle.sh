@@ -3,22 +3,22 @@
 set -euo pipefail
 
 if [[ $# -ne 1 ]]; then
-  echo "Usage: VLLM_IMAGE=<exact-current-vllm-image> $0 /path/to/airgap-transfer-kit" >&2
+  echo "Usage: [VLLM_IMAGE=<exact-current-vllm-image>] $0 /path/to/airgap-transfer-kit" >&2
   exit 64
 fi
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 bundle_root=$(realpath -m "$1")
 python_bin=${PYTHON_BIN:-python3.11}
+docker_bin=${DOCKER_BIN:-docker}
 vllm_image=${VLLM_IMAGE:-}
 model_store=${MODEL_STORE:-}
 
-if [[ -z "$vllm_image" ]]; then
-  echo "Set VLLM_IMAGE to the exact vLLM image/tag you validated (for example, your existing local image)." >&2
-  exit 64
-fi
-for command in "$python_bin" docker sha256sum tar; do
-  command -v "$command" >/dev/null || { echo "Missing required command: $command" >&2; exit 69; }
+for command in "$python_bin" "$docker_bin" sha256sum tar; do
+  command -v "$command" >/dev/null || [[ -x "$command" ]] || {
+    echo "Missing required command: $command" >&2
+    exit 69
+  }
 done
 
 if [[ -e "$bundle_root" ]]; then
@@ -34,11 +34,20 @@ echo "Downloading Linux Python wheels (including all transitive dependencies)...
   --requirement "$repo_root/requirements-airgap.txt"
 
 echo "Pulling and exporting application runtime images..."
-runtime_images=("postgres:16-alpine" "apache/kafka:3.8.0" "$vllm_image")
+runtime_images=("postgres:16-alpine" "apache/kafka:3.8.0")
+if [[ -n "$vllm_image" ]]; then
+  runtime_images+=("$vllm_image")
+else
+  echo "No VLLM_IMAGE supplied; exporting PostgreSQL and Kafka only."
+fi
 for image in "${runtime_images[@]}"; do
-  docker pull "$image"
+  "$docker_bin" pull "$image"
 done
-docker image save --output "$bundle_root/images/runtime-images.tar" "${runtime_images[@]}"
+image_archive="$bundle_root/images/runtime-images.tar"
+if [[ "$docker_bin" == *.exe && -x "$(command -v wslpath || true)" ]]; then
+  image_archive=$(wslpath -w "$image_archive")
+fi
+"$docker_bin" image save --output "$image_archive" "${runtime_images[@]}"
 printf '%s\n' "${runtime_images[@]}" > "$bundle_root/images/images.txt"
 
 if [[ -n "$model_store" ]]; then
@@ -62,8 +71,8 @@ fi
 {
   echo "Created: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "Python: $($python_bin --version)"
-  echo "vLLM image: $vllm_image"
-  echo "Images: postgres:16-alpine, apache/kafka:3.8.0, $vllm_image"
+  echo "vLLM image: ${vllm_image:-not included}"
+  echo "Images: ${runtime_images[*]}"
   echo "Model store included: $([[ -n "$model_store" ]] && echo yes || echo no)"
 } > "$bundle_root/BUNDLE-CONTENTS.txt"
 echo "Air-gap transfer kit created at: $bundle_root"
